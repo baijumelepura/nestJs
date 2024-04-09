@@ -79,22 +79,19 @@ To create a tag in the controller@ApiTags('Root Path')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
-  }
-
-  @Get('throw')
-  throwError(): string {
-    throw new HttpException({ message: 'Sample Error' }, 500);
-  }
 ```
 
-### user/user.model.ts
+### form/form.model.ts
 To create a schema in the model @  @ApiProperty()
 ```javascript
 @Table
-export class User extends Model {
+export class Form extends Model {
+  @Column
+  @ApiProperty()
+  uuid: string;
+  @Column
+  @ApiProperty()
+  title: string;
   @Column
   @ApiProperty()
   name: string;
@@ -103,12 +100,12 @@ export class User extends Model {
   email: string;
   @Column
   @ApiProperty()
-  password: string;
+  phonenumber: number;
 }
 ```
 and then run the app and you will see.</br>
 
-![swagger02](https://user-images.githubusercontent.com/29441880/136858370-d2b5f09d-fcbb-4c08-9a50-9780e3da9d59.PNG)
+![swagger02](https://private-user-images.githubusercontent.com/12832061/320947866-1b99ea9b-ed6e-40b7-92fb-38cd7982783e.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTI2ODQ3NDcsIm5iZiI6MTcxMjY4NDQ0NywicGF0aCI6Ii8xMjgzMjA2MS8zMjA5NDc4NjYtMWI5OWVhOWItZWQ2ZS00MGI3LTkyZmItMzhjZDc5ODI3ODNlLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA0MDklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNDA5VDE3NDA0N1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTRmNDRkZWZmMmMzYmQ4ZWU3NzFiNWVhMDE2NWU3OGVlNjJkNDhjNzkwOTMxYjIwMGRhZWJiMmFlMjBjZWMzYTYmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.pL_UbyOkKEutzveHhkjTmkRskeOT666CVpiOxNaXAoM)
 
 ## Install Sequelize MySQL
 
@@ -123,100 +120,3 @@ $ nest g service user
 $ nest g model user
 $ nest g controller user
 ```
-
-## Install Sentry
-
-```bash
-$ npm install --save @sentry/node @sentry/tracing
-```
-
-## Create Sentry module, service and interceptor
-
-```bash
-$ nest g module sentry
-$ nest g service sentry
-$ nest g interceptor sentry/sentry
-```
-
-### SentryModule
-
-1- Create the `SentryModule.forRoot()` method.
-```javascript
-static forRoot(options: Sentry.NodeOptions) {
-    Sentry.init(options);
-    return {
-      module: SentryModule,
-      providers: [
-        {
-          provide: SENTRY_OPTIONS,
-          useValue: options,
-        },
-        SentryService,
-        {
-          provide: APP_INTERCEPTOR,
-          useClass: SentryInterceptor,
-        },
-      ],
-      exports: [SentryService],
-    };
-
-```
-2- Call the `Sentry.Module.forRoot({...})` in the AppModule.
-```javascript
- SentryModule.forRoot({
-      dsn: process.env.SENTRY_DNS,
-      tracesSampleRate: 1.0,
-      debug: true,
-    }),
-```
-3- Add the call to the Express requestHandler middleware in the `AppModule`.
-
-```javascript
-export class AppModule {
-  configure(consumer: MiddlewareConsumer): void {
-    consumer
-      .apply(Sentry.Handlers.requestHandler())
-      .forRoutes({ path: '*', method: RequestMethod.ALL });
-  }
-}
-```
-
-### SentryService
-
-We want to initialize the transaction in the constructor of the service. You can
-customize your main transaction there.
-
-```javascript
-@Injectable({ scope: Scope.REQUEST })
-```
-
-Note that because I inject the Express request, the service must be request scoped. You
-can read more about that [here](https://docs.nestjs.com/fundamentals/injection-scopes#request-provider).
-
-```javascript
-@Injectable({ scope: Scope.REQUEST })
-export class SentryService {
-  constructor(@Inject(REQUEST) private request: Request) {
-    // ... etc ...
-  }
-}
-```
-
-### SentryInterceptor
-
-The `SentryInterceptor` will capture the exception and finish the transaction. Please also
-note that it must be request scoped as we inject the `SentryService`:
-
-```javascript
-@Injectable({ scope: Scope.REQUEST })
-export class SentryInterceptor implements NestInterceptor {
-  constructor(private sentryService: SentryService) {}
-
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    // ... etc ...
-  }
-}
-```
-
-
-# nestJs
