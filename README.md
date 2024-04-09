@@ -115,8 +115,8 @@ $ npm install --save-dev @types/sequelize
 ```
 ### Create Sentry module, service and interceptor
 ```bash
-$ nest g module user
-$ nest g service user
-$ nest g model user
-$ nest g controller user
+$ nest g module form
+$ nest g service form
+$ nest g model form
+$ nest g controller form
 ```
